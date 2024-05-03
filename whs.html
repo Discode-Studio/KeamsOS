@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="whs.css">
+    <style>
+      body {
+        background-color: #505050;
+        color: white;
+      }
+
+      button {
+        color: #fff;
+        background-color: royalblue;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 3px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        text-align: center;
+        text-decoration: none;
+        transition: background-color 0.3s ease;
+      }
+
+      button:hover {
+        background-color: blue;
+      }
+
+      button:focus {
+        outline: none;
+      }
+
+      button:active {
+        background-color: red;
+      }
+
+      h1 {
+        text-size: 50px;
+        color: white;
+      }
+
+      input {
+        border: 1px solid #202020;
+        background-color: #383838;
+        color: white;
+        border-radius: 5px;
+        width: 500px;
+        height: 50px;
+      }
+
+      textarea {
+        border: 1px solid #202020;
+        background-color: #383838;
+        color: white;
+        border-radius: 5px;
+        width: 500px;
+        height: 150px;
+        background-color: #383838;
+      }
+
+      input:focus,
+      textarea:focus {
+        box-shadow: 0 0 5px 2px blue; /* Effet de contour bleu lorsqu'il est en focus */
+      }
+
+      a {
+        color: white;
+      }
+    </style>
+    <title>Webhook Sender - KeamsOS</title>
+  </head>
+  <body>
+    <h1>> <a href="index.html">KeamsOS</a> < - Discord Webhook utility</h1>
+    <label for="webhook-link">We are not responsible for abuse</label><br><br>
+    <label for="message">> Message:</label><br>
+    <textarea id="message" name="message" oninput="updatePreview()"></textarea><br><br>
+    <label for="time">> Time in seconds:</label><br>
+    <input type="number" id="time" name="time"><br><br>
+    <div id="webhook-container">
+      <label for="webhook-link-1">> Webhook link:</label><br>
+      <input type="text" id="webhook-link-1" name="webhook-link-1"><br><br>
+    </div>
+    <section>
+    <div id="preview-container">
+      <label>Preview:</label><br>
+      <h3><img src="avatar.png" alt="Avatar" class="circle"> Webhook Name<h3><span class="preview" id="preview"></span><br><br>
+    </div>
+    </div>
+    </section>
+    <button onclick="startLoop()">Start loop</button>
+    <button onclick="addWebhook()">Add a new webhook</button>
+    <button onclick="stopLoop()">Stop loop</button>
+    <button onclick="resetNumbers()">Refresh</button><br><br>
+    <script>
+      // Array to store webhook links
+      let webhooks = ["webhook-link-1"];
+
+      // Global variables for interval and count
+      let interval;
+      let count = 0;
+
+      // Function to start the loop
+      function startLoop() {
+        let time = document.getElementById("time").value;
+        let message = document.getElementById("message").value;
+        let webhookLinks = [];
+
+        for (let i = 0; i < webhooks.length; i++) {
+          let webhookLink = document.getElementById(webhooks[i]).value;
+          if (webhookLink !== "") {
+            webhookLinks.push(webhookLink);
+          }
+        }
+
+        if (webhookLinks.length === 0) {
+          alert("You must enter at least one webhook link!");
+          return;
+        }
+
+        count = 0;
+
+        function sendMessage() {
+          if (count % webhookLinks.length === 2000) {
+            clearInterval(interval);
+            alert("Discord character limit reached!");
+            return;
+          }
+
+          let currentWebhook = webhookLinks[count % webhookLinks.length];
+          let date = new Date();
+          let timestamp = `<t:${Math.floor(date.getTime() / 1000)}>`;
+
+          let request = new XMLHttpRequest();
+          request.open("POST", currentWebhook);
+
+          let params = {
+            "content": message
+          };
+
+          request.setRequestHeader("Content-type", "application/json");
+          request.send(JSON.stringify(params));
+
+          count++;
+          updateExecutionTime();
+        }
+
+        sendMessage();
+        interval = setInterval(sendMessage, time * 1000);
+
+        setTimeout(() => {
+          clearInterval(interval);
+        }, 60000);
+      }
+
+      // Function to stop the loop
+      function stopLoop() {
+        clearInterval(interval);
+      }
+
+      // Function to add a new webhook
+      function addWebhook() {
+        let container = document.getElementById("webhook-container");
+        let id = "webhook-link-" + (webhooks.length + 1);
+
+        // Getting the last stored number or initializing to 0 if no previous number exists
+        let lastNumber = localStorage.getItem("lastNumber");
+        let number;
+
+        // Checking if a previous number exists
+        if (lastNumber) {
+          number = parseInt(lastNumber) + 1;
+        } else {
+          number = 1;
+        }
+
+        // Storing the new number
+        localStorage.setItem("lastNumber", number.toString());
+
+        // Displaying the number in the HTML page
+        let label = document.createElement("label");
+        label.htmlFor = "webhook";
+        label.innerText = "Webhook link " + number + ": \n";
+
+        container.appendChild(label);
+        let input = document.createElement("input");
+        input.type = "text";
+        input.id = id;
+        input.name = id;
+        container.appendChild(input);
+        container.appendChild(document.createElement("br"));
+        container.appendChild(document.createElement("br"));
+
+        webhooks.push(id);
+      }
+
+      // Function to reset the numbers
+      function resetNumbers() {
+        localStorage.removeItem("lastNumber");
+        alert("Numbers have been reset!");
+      }
+
+      // Function to update the preview of the message
+      function updatePreview() {
+        let message = document.getElementById("message").value;
+        document.getElementById("preview").innerText = message;
+      }
+
+      // Function to update the execution time
+      function updateExecutionTime() {
+        let executionTime = count * document.getElementById("time").value;
+        document.getElementById("execution-time").innerText = executionTime;
+      }
+    </script>
+  </body>
+      </html>
